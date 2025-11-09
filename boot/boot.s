@@ -17,5 +17,30 @@ section .text
 global _start
 extern kernel_main
 _start:
+    mov ebx, MSG1
+    call print_string_pm
     call kernel_main
     hlt
+
+MSG1 db "[INFO] Swithed into protected mode", 0
+
+print_string_pm:
+    pusha
+    mov edx, 0xB8000
+
+print_string_pm_loop:
+    mov al, [ebx] ; [ebx]为字符的地址
+    mov ah, 0x0F
+
+    cmp al, 0 ; 查看是否是字符串末尾
+    je print_string_pm_done
+
+    mov [edx], ax ; 将字符+颜色属性写入到视频存储区域
+    add ebx, 1 
+    add edx, 2 
+
+    jmp print_string_pm_loop
+
+print_string_pm_done:
+    popa
+    ret
