@@ -18,6 +18,7 @@ clean:
 	make -C boot clean
 	make -C kernel clean
 	rm -f $(TARGET)
+	rm -f $(KELF)
 
 run:
 	make clean
