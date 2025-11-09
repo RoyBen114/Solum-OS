@@ -7,10 +7,10 @@ void cls(){
     }
 }
 void print(const char *str,int x,int y){
-    for (int i = x; str[i]; i++)
+    for (int i = 0; str[i]; i++)
     {
-        videobuf[i * 2 + 0 + y * 160] = str[i];
-        videobuf[i * 2 + 1 + y * 160] = 0x0F;
+        videobuf[(i+x) * 2 + 0 + y * 160] = str[i];
+        videobuf[(i+x) * 2 + 1 + y * 160] = 0x0F;
     }
 }
 int kernel_main()
