@@ -2,9 +2,8 @@ ENTRY(boot_start)
 
 SECTIONS
 {
-    . = 1M;
+    . = 0x100000;
     
-    /* 确保 multiboot header 在最前面 */
     .multiboot2 BLOCK(4K) : ALIGN(4K)
     {
         *(.multiboot2)
@@ -24,5 +23,13 @@ SECTIONS
     {
         *(COMMON)
         *(.bss)
+    }
+    
+    /DISCARD/ : {
+        *(.note*)
+        *(.iplt*)
+        *(.igot*)
+        *(.rel*)
+        *(.comment)
     }
 }

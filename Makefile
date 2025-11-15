@@ -12,7 +12,7 @@ $(TARGET): $(KELF) grub.cfg
 	grub-mkrescue -o Solum.iso ISODir/
 
 $(KELF): $(BOOT_OBJ) $(KERN_OBJ) $(LINKSCR)
-	ld -m elf_i386 -n -T $(LINKSCR) -o $(KELF) $(BOOT_OBJ) $(KERN_OBJ)
+	ld -n -T $(LINKSCR) -o $(KELF) $(BOOT_OBJ) $(KERN_OBJ)
 
 $(BOOT_OBJ): $(S_SRC)
 	make -C boot all
