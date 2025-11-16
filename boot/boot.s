@@ -6,15 +6,6 @@ header_start:
     dd header_end - header_start ; Header length
     dd 0x100000000 - (0xe85250d6 + 0 + (header_end - header_start)) ; Checksum
 
-    ; 可选：帧缓冲区标签（如果需要图形）
-    ; align 8
-    ; dw 5    ; type: framebuffer
-    ; dw 0    ; flags
-    ; dd 20   ; size
-    ; dd 1024 ; width
-    ; dd 768  ; height
-    ; dd 32   ; depth
-
     ; 架构标签 - 指定为x86_64
     align 8
     dw 6    ; type: EFI boot services
