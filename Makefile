@@ -28,6 +28,6 @@ clean:
 
 run:
 	make
-	qemu-system-x86_64 -cdrom $(TARGET) -m 1G
+	qemu-system-x86_64 -cdrom $(TARGET) -m 1G -serial stdio
 
 .PHONY: run clean
