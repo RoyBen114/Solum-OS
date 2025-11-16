@@ -113,7 +113,7 @@ void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint3
 void kernel_main(struct boot_info *info) {
     // 初始化串口
     serial_init();
-    serial_puts("\n=== UEFI Display Debug ===\n");
+    serial_puts("\n=== Debug ===\n");
     
     // 输出详细的引导信息
     serial_puts("Boot type: ");
