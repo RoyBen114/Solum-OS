@@ -1,4 +1,3 @@
-.vscode/
 *.o
 kernel.elf
 Solum.iso
