@@ -73,7 +73,7 @@ void serial_put_dec(uint32_t value) {
     serial_puts(ptr);
 }
 
-// 简单的VGA文本输出 (BIOS模式使用)
+// 简单的VGA文本输出
 void vga_puts(const char *str, uint8_t color) {
     volatile uint16_t *vga_buffer = (volatile uint16_t*)0xB8000;
     int i;
