@@ -1,9 +1,12 @@
 #include <stdint.h>
 
-struct boot_info {
+int xpos = 0;
+int ypos = 0;
+volatile unsigned char *video = (volatile unsigned char *)0xB8000;
+
+struct boot_info
+{
     uint32_t boot_type;
-    void *memory_map_ptr;
-    uint32_t memory_map_entries;
     uint64_t framebuffer_addr;
     uint32_t framebuffer_width;
     uint32_t framebuffer_height;
@@ -11,20 +14,24 @@ struct boot_info {
     uint32_t framebuffer_bpp;
 };
 
+//===================================================serial相关函数(串口操作)==================================================
 // 端口输入函数
-static inline uint8_t inb(uint16_t port) {
+static inline uint8_t inb(uint16_t port)
+{
     uint8_t ret;
-    asm volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
 
 // 端口输出函数
-static inline void outb(uint16_t port, uint8_t val) {
-    asm volatile ("outb %0, %1" : : "a"(val), "Nd"(port));
+static inline void outb(uint16_t port, uint8_t val)
+{
+    asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
 }
 
 // 串口初始化
-void serial_init() {
+void serial_init()
+{
     outb(0x3F8 + 1, 0x00);
     outb(0x3F8 + 3, 0x80);
     outb(0x3F8 + 0, 0x0C);
@@ -34,164 +41,221 @@ void serial_init() {
     outb(0x3F8 + 4, 0x0B);
 }
 
-void serial_puts(const char* str) {
-    while (*str) {
-        while ((inb(0x3F8 + 5) & 0x20) == 0);
+void serial_puts(const char *str)
+{
+    while (*str)
+    {
+        while ((inb(0x3F8 + 5) & 0x20) == 0)
+            ;
         outb(0x3F8, *str++);
     }
 }
 
-void serial_put_hex(uint64_t value) {
+void serial_put_hex(uint64_t value)
+{
     char hex_chars[] = "0123456789ABCDEF";
     char buffer[17];
     buffer[16] = '\0';
-    
-    for (int i = 15; i >= 0; i--) {
+
+    for (int i = 15; i >= 0; i--)
+    {
         buffer[i] = hex_chars[value & 0xF];
         value >>= 4;
     }
-    
+
     serial_puts("0x");
     serial_puts(buffer);
 }
 
-void serial_put_dec(uint32_t value) {
+void serial_put_dec(uint32_t value)
+{
     char buffer[11];
-    char* ptr = buffer + 10;
+    char *ptr = buffer + 10;
     *ptr = '\0';
-    
-    if (value == 0) {
+
+    if (value == 0)
+    {
         serial_puts("0");
         return;
     }
-    
-    while (value > 0) {
+
+    while (value > 0)
+    {
         *--ptr = '0' + (value % 10);
         value /= 10;
     }
-    
+
     serial_puts(ptr);
 }
 
-// 简单的VGA文本输出
-void vga_puts(const char *str, uint8_t color) {
-    volatile uint16_t *vga_buffer = (volatile uint16_t*)0xB8000;
-    int i;
-    for (i = 0; str[i] != 0; i++) {
-        vga_buffer[i] = (color << 8) | str[i];
+//===================================================kprintf相关函数(VGA操作)==================================================
+static void itoa(char *buf, int base, int d)
+{
+    char *p = buf;
+    char *p1, *p2;
+    unsigned long ud = d;
+    int divisor = 10;
+
+    if (base == 'd' && d < 0)
+    {
+        *p++ = '-';
+        buf++;
+        ud = -d;
+    }
+    else if (base == 'x')
+        divisor = 16;
+
+    do
+    {
+        int remainder = ud % divisor;
+
+        *p++ = (remainder < 10) ? remainder + '0' : remainder + 'a' - 10;
+    } while (ud /= divisor);
+
+    *p = 0;
+
+    p1 = buf;
+    p2 = p - 1;
+    while (p1 < p2)
+    {
+        char tmp = *p1;
+        *p1 = *p2;
+        *p2 = tmp;
+        p1++;
+        p2--;
     }
 }
 
-// 清除VGA屏幕
-void vga_clear(uint8_t color) {
-    volatile uint16_t *vga_buffer = (volatile uint16_t*)0xB8000;
-    for (int i = 0; i < 80 * 25; i++) {
-        vga_buffer[i] = (color << 8) | ' ';
+static void putchar(int c)
+{
+    if (c == '\n' || c == '\r')
+    {
+    newline:
+        xpos = 0;
+        ypos++;
+        if (ypos >= 24)
+            ypos = 0;
+        return;
     }
+
+    *(video + (xpos + ypos * 80) * 2) = c & 0xFF;
+    *(video + (xpos + ypos * 80) * 2 + 1) = 0x07;
+
+    xpos++;
+    if (xpos >= 80)
+        goto newline;
 }
 
-// UEFI帧缓冲区支持
-void fb_put_pixel(uint32_t x, uint32_t y, uint32_t color, struct boot_info *info) {
-    if (info->framebuffer_addr == 0) return;
-    
-    uint8_t *fb = (uint8_t*)(uintptr_t)info->framebuffer_addr;
-    uint32_t *pixel = (uint32_t*)(fb + y * info->framebuffer_pitch + x * 4);
-    *pixel = color;
-}
+void kprintf(const char *format, ...)
+{
+    char **arg = (char **)&format;
+    int c;
+    char buf[20];
 
-// 简单的矩形绘制
-void fb_draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color, struct boot_info *info) {
-    if (info->framebuffer_addr == 0) return;
-    
-    for (uint32_t row = y; row < y + height; row++) {
-        for (uint32_t col = x; col < x + width; col++) {
-            fb_put_pixel(col, row, color, info);
+    arg++;
+
+    while ((c = *format++) != 0)
+    {
+        if (c != '%')
+            putchar(c);
+        else
+        {
+            char *p, *p2;
+            int pad0 = 0, pad = 0;
+
+            c = *format++;
+            if (c == '0')
+            {
+                pad0 = 1;
+                c = *format++;
+            }
+
+            if (c >= '0' && c <= '9')
+            {
+                pad = c - '0';
+                c = *format++;
+            }
+
+            switch (c)
+            {
+            case 'd':
+            case 'u':
+            case 'x':
+                itoa(buf, c, *((int *)arg++));
+                p = buf;
+                goto string;
+                break;
+
+            case 's':
+                p = *arg++;
+                if (!p)
+                    p = "(null)";
+
+            string:
+                for (p2 = p; *p2; p2++)
+                    ;
+                for (; p2 < p + pad; p2++)
+                    putchar(pad0 ? '0' : ' ');
+                while (*p)
+                    putchar(*p++);
+                break;
+
+            default:
+                putchar(*((int *)arg++));
+                break;
+            }
         }
     }
 }
 
-void kernel_main(struct boot_info *info) {
+void cls()
+{
+    int i;
+    for (i = 0; i < 80 * 25 * 2; i++)
+        *(video + i) = 0;
+    xpos = 0;
+    ypos = 0;
+}
+
+void kernel_main(struct boot_info *info) 
+{
     // 初始化串口
     serial_init();
     serial_puts("\n === Debug ===\n");
-    
+
     // 输出详细的引导信息
     serial_puts("Boot type: ");
-    if (info->boot_type == 0) {
+    if (info->boot_type == 0)
+    {
         serial_puts("BIOS\n");
-    } else {
+    }
+    else
+    {
         serial_puts("UEFI\n");
     }
-    
+
     serial_puts("Framebuffer address: ");
     serial_put_hex(info->framebuffer_addr);
     serial_puts("\n");
-    
+
     serial_puts("Framebuffer width: ");
     serial_put_dec(info->framebuffer_width);
     serial_puts("\n");
-    
+
     serial_puts("Framebuffer height: ");
     serial_put_dec(info->framebuffer_height);
     serial_puts("\n");
-    
+
     serial_puts("Framebuffer pitch: ");
     serial_put_dec(info->framebuffer_pitch);
     serial_puts("\n");
-    
+
     serial_puts("Framebuffer bpp: ");
     serial_put_dec(info->framebuffer_bpp);
     serial_puts("\n");
-    
-    // BIOS模式：使用VGA文本模式
-    if (info->boot_type == 0) {
-        serial_puts("Using VGA text mode (BIOS)\n");
-        vga_clear(0x00); // 黑色背景
-        vga_puts("SolumOS - BIOS Mode", 0x0F); // 白色文本
-    }
-    // UEFI模式：尝试使用帧缓冲区
-    else if (info->framebuffer_addr != 0) {
-        serial_puts("Using framebuffer (UEFI)\n");
-        
-        // 清屏为蓝色
-        for (uint32_t y = 0; y < info->framebuffer_height; y++) {
-            for (uint32_t x = 0; x < info->framebuffer_width; x++) {
-                fb_put_pixel(x, y, 0x000000FF, info); // 蓝色背景
-            }
-        }
-        
-        // 绘制一些简单的图形来测试
-        fb_draw_rect(100, 100, 200, 150, 0x00FF0000, info); // 红色矩形
-        fb_draw_rect(150, 150, 200, 150, 0x0000FF00, info); // 绿色矩形
-        fb_draw_rect(200, 200, 200, 150, 0x00FFFFFF, info); // 白色矩形
-        
-        serial_puts("Framebuffer graphics drawn\n");
-    }
-    // UEFI模式但没有帧缓冲区
-    else {
-        serial_puts("No framebuffer available (UEFI)\n");
-        // 尝试VGA文本模式（虽然通常不工作）
-        vga_clear(0x00);
-        vga_puts("UEFI - No Framebuffer", 0x0F);
-    }
-    
+
     serial_puts("Kernel initialization complete\n");
-    
-    // 主循环
-    int counter = 0;
-    while (1) {
-        // 定期输出心跳信号
-        for (volatile int i = 0; i < 10000000; i++);
-        
-        if (counter % 10 == 0) {
-            serial_puts("Heartbeat: ");
-            serial_put_dec(counter);
-            serial_puts("\n");
-        }
-        
-        counter++;
-        
-        // 安全暂停
-        asm volatile ("hlt");
-    }
+
+    cls();
+    kprintf("abcde");
 }
