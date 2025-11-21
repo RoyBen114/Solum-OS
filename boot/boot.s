@@ -13,13 +13,6 @@ header_start:
     dd 8    ; size
     dd 4    ; architecture: x86_64
 
-    ; UEFI入口
-    ;align 8
-    ;dw 8    ; type: EFI 64-bit entry point
-    ;dw 0    ; flags
-    ;dd 12   ; size
-    ;dd kernel_entry
-
     ; 结束标签
     align 8
     dw 0    ; type
