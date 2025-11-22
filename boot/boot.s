@@ -45,6 +45,10 @@ stack_bottom:
     resb 16384
 stack_top:
 
+global framebuffer_backbuffer
+framebuffer_backbuffer:
+    resb 1024 * 768 * 4
+    
 section .data
 align 8
 
@@ -60,7 +64,7 @@ gdtr64:
     dq gdt64
 
 global multiboot2_info_addr
-multiboot2_info_addr: dd 0
+multiboot2_info_addr: dq 0
 
 section .text
 bits 32
@@ -68,7 +72,8 @@ global boot_start
 
 boot_start:
     ; store multiboot2 info
-    mov [multiboot2_info_addr], ebx
+    mov dword [multiboot2_info_addr], ebx
+    mov dword [multiboot2_info_addr + 4], 0
 
     mov esp, stack_top
     
@@ -162,6 +167,7 @@ kernel_entry:
     mov rsp, stack_top
 
     extern kernel_main
+    mov rdi, [multiboot2_info_addr]
     call kernel_main
     
     hlt
