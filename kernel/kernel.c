@@ -36,13 +36,14 @@ struct multiboot2_info {
 #define TEXT_COLOR_WHITE 0x07
 
 // 在文本模式下输出字符
-void text_mode_putchar(uint16_t* fb, int x, int y, char c, uint8_t color) {
+void text_mode_putchar(uint64_t fb, int x, int y, char c, uint8_t color) {
+    uint16_t* video = (uint16_t*)fb;
     if (x < 0 || x >= 80 || y < 0 || y >= 25) return;
-    fb[y * 80 + x] = (color << 8) | c;
+    video[y * 80 + x] = (color << 8) | c;
 }
 
 // 在文本模式下输出字符串
-void text_mode_puts(uint16_t* fb, int x, int y, const char* str, uint8_t color) {
+void text_mode_puts(uint64_t fb, int x, int y, const char* str, uint8_t color) {
     while (*str) {
         text_mode_putchar(fb, x, y, *str, color);
         x++;
@@ -56,9 +57,10 @@ void text_mode_puts(uint16_t* fb, int x, int y, const char* str, uint8_t color) 
 }
 
 // 清空文本模式屏幕
-void text_mode_clear(uint16_t* fb, uint8_t color) {
+void text_mode_clear(uint64_t fb, uint8_t color) {
+    uint16_t* video = (uint16_t*)fb;
     for (int i = 0; i < 80 * 25; i++) {
-        fb[i] = (color << 8) | ' ';
+        video[i] = (color << 8) | ' ';
     }
 }
 
@@ -163,12 +165,12 @@ void kernel_main()
         serial_printf("Graphics test completed\n");
     } else {
         // 文本模式测试
-        uint16_t* text_fb = (uint16_t*)fb_addr;
-        text_mode_clear(text_fb, TEXT_COLOR_BLACK);
-        text_mode_puts(text_fb, 0, 0, "SolumOS Boot Successful!", TEXT_COLOR_GREEN);
-        text_mode_puts(text_fb, 0, 1, "Text Mode: 80x25", TEXT_COLOR_WHITE);
-        text_mode_puts(text_fb, 0, 2, "Frame Buffer Test", TEXT_COLOR_RED);
-        text_mode_puts(text_fb, 0, 3, "UEFI not available - Using BIOS", TEXT_COLOR_BLUE);
+        //uint16_t* text_fb = (uint16_t*)fb_addr;
+        text_mode_clear(fb_addr, TEXT_COLOR_BLACK);
+        text_mode_puts(fb_addr, 0, 0, "SolumOS Boot Successful!", TEXT_COLOR_GREEN);
+        text_mode_puts(fb_addr, 0, 1, "Text Mode: 80x25", TEXT_COLOR_WHITE);
+        text_mode_puts(fb_addr, 0, 2, "Frame Buffer Test", TEXT_COLOR_RED);
+        text_mode_puts(fb_addr, 0, 3, "UEFI not available - Using BIOS", TEXT_COLOR_BLUE);
         serial_printf("Text mode test completed\n");
     }
     
