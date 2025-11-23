@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include "../boot/info.h"
-#include "../lib/io/io.h"
+#include "../lib/io.h"
 
 // 图形模式填充测试
 void graphics_fill_test(uint64_t fb_addr1, uint32_t width, uint32_t height, uint32_t pitch, uint32_t bpp) {
