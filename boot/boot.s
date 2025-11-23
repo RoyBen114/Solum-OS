@@ -15,7 +15,7 @@ header_start:
     ; frame buffer
     align 8
     dw 8
-    dw 0
+    dw 1
     dd 20
     dd 1024
     dd 768
@@ -46,6 +46,7 @@ stack_bottom:
 stack_top:
 
 global framebuffer_backbuffer
+
 framebuffer_backbuffer:
     resb 1024 * 768 * 4
     

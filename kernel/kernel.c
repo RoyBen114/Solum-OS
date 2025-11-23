@@ -63,63 +63,49 @@ void text_mode_clear(uint16_t* fb, uint8_t color) {
     }
 }
 
-// 图形模式填充测试 - 尝试不同的颜色格式
+// 图形模式填充测试
 void graphics_fill_test(uint64_t fb_addr, uint32_t width, uint32_t height, uint32_t pitch, uint32_t bpp) {
     serial_printf("Graphics mode: %dx%d, bpp=%d, pitch=%d\n", width, height, bpp, pitch);
-    
-    if (bpp == 24) {
         uint8_t* fb = (uint8_t*)fb_addr;
         
-        // 测试1: 尝试BGR格式 (UEFI通常使用)
-        serial_printf("Test 1: BGR format (Blue=0, Green=0, Red=255)");
+        // 测试1: 尝试RGB格式
+        serial_printf("Test 1: BGR format (Red=255, Green=0, Blue=0)\n");
         for (uint32_t y = 0; y < height; y++) {
             for (uint32_t x = 0; x < width; x++) {
                 uint32_t offset = y * pitch + x * 3;
-                fb[offset] = 0;     // B
-                fb[offset + 1] = 0; // G
-                fb[offset + 2] = 255; // R
-            }
-        }
-        
-        // 延迟
-        for (volatile int i = 0; i < 10000000; i++);
-        
-        // 测试2: 尝试RGB格式
-        serial_printf("Test 2: RGB format (Red=255, Green=0, Blue=0)");
-        for (uint32_t y = 0; y < height; y++) {
-            for (uint32_t x = 0; x < width; x++) {
-                uint32_t offset = y * pitch + x * 3;
-                fb[offset] = 255;   // R
+                fb[offset] = 255;     // R
                 fb[offset + 1] = 0; // G
                 fb[offset + 2] = 0; // B
             }
         }
         
         // 延迟
-        for (volatile int i = 0; i < 10000000; i++);
+        for (volatile int i = 0; i < 1000000000; i++);
         
-        // 测试3: 绿色屏幕
-        serial_printf("Test 3: Green screen");
+        // 测试2: 尝试RGB格式
+        serial_printf("Test 2: BGR format (Red=0, Green=255, Blue=0)\n");
         for (uint32_t y = 0; y < height; y++) {
             for (uint32_t x = 0; x < width; x++) {
                 uint32_t offset = y * pitch + x * 3;
-                fb[offset] = 0;     // B
+                fb[offset] = 0;   // R
                 fb[offset + 1] = 255; // G
-                fb[offset + 2] = 0; // R
+                fb[offset + 2] = 0; // B
             }
         }
-    } else if (bpp == 16) {
-        // 16位颜色模式
-        uint16_t* fb = (uint16_t*)fb_addr;
-        uint32_t pixels_per_line = pitch / 2;
         
-        // 红色 (RGB565)
+        // 延迟
+        for (volatile int i = 0; i < 1000000000; i++);
+        
+        // 测试3: 蓝色屏幕
+        serial_printf("Test 3: BGR format (Red=0, Green=0, Blue=255)\n");
         for (uint32_t y = 0; y < height; y++) {
             for (uint32_t x = 0; x < width; x++) {
-                fb[y * pixels_per_line + x] = 0xF800; // 红色
+                uint32_t offset = y * pitch + x * 3;
+                fb[offset] = 0;     // R
+                fb[offset + 1] = 0; // G
+                fb[offset + 2] = 255; // B
             }
         }
-    }
 }
 
 void kernel_main() 
