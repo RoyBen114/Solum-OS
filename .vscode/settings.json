@@ -1,8 +1,10 @@
 {
     "files.associations": {
-        "compare": "c",
-        "stddef.h": "c",
         "stdint.h": "c",
+        "screen.h": "c",
+        "cstdint": "c",
+        "stddef.h": "c",
+        "compare": "cpp",
         "stdarg.h": "c"
     }
 }
