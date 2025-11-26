@@ -19,7 +19,7 @@ void kernel_main()
         // 图形模式测试
         serial_printf("Graphics mode\n");
     } else {
-        vga_printf("hello");
+        vga_printf("Hello");
     }
     
     serial_printf("System ready\n");
