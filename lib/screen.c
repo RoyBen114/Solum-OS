@@ -1,296 +1,227 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include "screen.h"
 #include "string.h"
 #include "port.h"
 
-static uint8_t tab_length=4;
+#define SCREEN_WIDTH 80
+#define SCREEN_HEIGHT 25
+#define TAB_LENGTH 4
 
-typedef enum char_color {
-    black = 0,
-    blue = 1,
-    green = 2,
-    cyan = 3,
-    red = 4,
-    magenta = 5,
-    brown = 6,
-    light_grey = 7,
-    dark_grey = 8,
-    light_blue = 9,
-    light_green = 10,
-    light_cyan = 11,
-    light_red = 12,
-    light_magenta = 13,
-    yellow  = 14,   
-    white = 15
-} vga_color_t;
-
-static uint8_t *video_memory = (uint8_t *)0xB8000;
-
+static uint16_t *video_memory = (uint16_t *)0xB8000;
 static uint8_t cursor_x = 0;
 static uint8_t cursor_y = 0;
 
-static void move_cursor()
+static void move_cursor(void)
 {
-    uint16_t cursorLocation = cursor_y * 80 + cursor_x;
-    outb(0x3D4, 14);                   
-    outb(0x3D5, cursorLocation >> 8);  
-    outb(0x3D4, 15);                   
-    outb(0x3D5, cursorLocation);    
+    uint16_t cursor_location = cursor_y * SCREEN_WIDTH + cursor_x;
+    outb(0x3D4, 14);
+    outb(0x3D5, cursor_location >> 8);
+    outb(0x3D4, 15);
+    outb(0x3D5, cursor_location & 0xFF);
 }
 
-void move_cursor_by_XY(uint8_t x,uint8_t y){
-	if(x>79||y>24)
-		return ;
-	cursor_x=x;
-	cursor_y=y;
-	move_cursor();
-}
-
-void clear_screen(){
-	cursor_x=0;
-	cursor_y=0;
-	for(int j=0;j<25;j++){
-		for(int i=0;i<80;i++)
-			vga_putc('\0',black,white);
-	}
-	cursor_x=0;
-	cursor_y=0;
-	move_cursor();
-}
-
-void screen_uproll_once(){ 
-	for(int j=1;j<25;j++){
-		for(int i=0;i<80;i++){
-			uint16_t cursorLocation = j * 80 + i;
-			uint16_t targetCursorLocation = (j-1) * 80 + i;
-			*((uint16_t *)video_memory+targetCursorLocation)=*((uint16_t *)video_memory+cursorLocation);										
-		}
-	}
-	for(int i=0;i<80;i++){
-		uint16_t lastRowCur=24*80+i;
-		*((char *)video_memory+2*lastRowCur)='\0';
-		*((char *)video_memory+2*lastRowCur+1)=0x0F;									
-
-	}
-	if(cursor_y!=0){
-		cursor_y--;
-		move_cursor();
-	}
-}
-void vga_putc(char input,vga_color_t back,vga_color_t fore){
-	uint16_t cursorLocation = cursor_y * 80 + cursor_x;
-	*((char *)video_memory+2*cursorLocation)=input;
-	*((char *)video_memory+2*cursorLocation+1)=(back<<4)|(fore&0x0F);
-	if(cursor_x==79){
-		if(cursor_y==24){
-			screen_uproll_once();
-			cursor_x=0;
-			cursor_y=24;
-		}
-		else{
-			cursor_x=0;
-			cursor_y++;
-		}
-	}
-	else{
-		cursor_x++;
-	}
-	move_cursor();
-}
-void putc_color(char input,vga_color_t back,vga_color_t fore){
-	switch (input)
-	{
-		case '\t':{
-			for(int i=0;i<tab_length;i++)
-				vga_putc('\0',back,fore);
-			break;
-		}
-		case '\n':{
-			uint8_t temp_num = 80-cursor_x;
-			if(temp_num==0)
-				temp_num=80;
-			for(int i=0;i<temp_num;i++)
-			vga_putc('\0',back,fore);
-			break;
-		}
-		default:
-			vga_putc(input,back,fore);	
-	}
-}
-
-void putc(char input){
-	putc_color(input,black,white);
-}
-
-void puts_color(char * input_str,vga_color_t back,vga_color_t fore){
-	char * probe=input_str;
-	while(*probe!='\0')
-		putc_color(*probe++,back,fore);
-}
-
-void puts(char *input_str){
-	puts_color(input_str,black,white);
-}
-
-void vga_init(){
-	clear_screen();
-}
-
-void insert_str(char *inserted_str,char *inserting_str,uint32_t offset) 
+void move_cursor_by_xy(uint8_t x, uint8_t y)
 {
-	char m[100]={0};
-	char *afterInsetedPositionStr=m;
-	strcpy(afterInsetedPositionStr,inserted_str+offset+2);
-	memcpy(inserted_str+offset,inserting_str,strlen(inserting_str));
-	*(inserted_str+offset+strlen(inserting_str))='\0';
-	strcat(inserted_str,afterInsetedPositionStr);
-	return inserted_str;
+    if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT) {
+        cursor_x = x;
+        cursor_y = y;
+        move_cursor();
+    }
 }
 
-void vga_printf(char *input_str,...)
+void clear_screen(void)
 {
-	static char staticArry[100]={0};
-	char *output_str=staticArry;
-	strcpy(output_str,input_str);
-	va_list ptr;
-	va_start(ptr,output_str);
-	int offset=0;
-	for(;*(output_str+offset)!='\0';offset++)
-	{
-		char *charptr=output_str+offset;
-		if (*charptr=='%')
-		{
-			if (*(charptr+1)=='s')
-			{
-				char *arg_str_ptr=va_arg(ptr,char*);
-
-				insert_str(output_str,arg_str_ptr,offset);
-				
-				offset=offset+strlen(arg_str_ptr)-1;
-				
-			}
-			else if(*(charptr+1)=='d')
-			{
-				int arg_int=va_arg(ptr,int);
-
-				char *temp_ptr=uintTostring(arg_int);
-
-				insert_str(output_str,temp_ptr,offset);
-				
-				offset=offset+strlen(temp_ptr)-1;
-			}
-			else if(*(charptr+1)=='c')
-			{
-				;
-			}
-			else if(*(charptr+1)=='H')
-			{
-				int arg_int=va_arg(ptr,int);
-
-				char*hexstrptr=num2hexstr(arg_int,1);
-				
-				insert_str(output_str,hexstrptr,offset);
-
-				offset=offset+strlen(hexstrptr)-1;
-			} 
-			else if(*(charptr+1)=='h')
-			{
-				int arg_int=va_arg(ptr,int);
-
-				char*hexstrptr=num2hexstr(arg_int,0);
-				
-				insert_str(output_str,hexstrptr,offset);
-
-				offset=offset+strlen(hexstrptr)-1;
-			}
-		}
-	}
-	va_end(ptr);
-	puts(output_str);
+    cursor_x = 0;
+    cursor_y = 0;
+    
+    const uint16_t blank = ' ' | (WHITE << 8);
+    for (size_t i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
+        video_memory[i] = blank;
+    }
+    move_cursor();
 }
 
-void printbasic(char *format_str,char *m)
+void screen_scroll_once(void)
 {
-	char *formatStr=format_str;
-	int i=0;
-	for(char *head=formatStr;*(head+i)!='\0';i++)
-	{
-		if (*(head+i)=='%'){
-			if(*(head+i+1)=='s')
-			{
-				insert_str(format_str,m,i);
-				
-			}
-			else if(*(head+i+1)=='d')
-			{
-
-			}
-			else;
-		}
-	}
-	
+    // Move all lines up by one
+    for (size_t j = 0; j < SCREEN_HEIGHT - 1; j++) {
+        for (size_t i = 0; i < SCREEN_WIDTH; i++) {
+            video_memory[j * SCREEN_WIDTH + i] = video_memory[(j + 1) * SCREEN_WIDTH + i];
+        }
+    }
+    
+    // Clear the last line
+    const uint16_t blank = ' ' | (WHITE << 8);
+    for (size_t i = 0; i < SCREEN_WIDTH; i++) {
+        video_memory[(SCREEN_HEIGHT - 1) * SCREEN_WIDTH + i] = blank;
+    }
+    
+    if (cursor_y > 0) {
+        cursor_y--;
+    }
+    move_cursor();
 }
 
-void printk_color(char *input_str,vga_color_t back,vga_color_t fore,...)
+static void vga_putc_raw(char c, vga_color_t back, vga_color_t fore)
 {
-	static char staticArry[100]={0};
-	char *output_str=staticArry;
-	strcpy(output_str,input_str);
-	va_list ptr;
-	va_start(ptr,output_str);
-	int offset=0;
-	for(;*(output_str+offset)!='\0';offset++)
-	{
-		char *charptr=output_str+offset;
-		if (*charptr=='%')
-		{
-			if (*(charptr+1)=='s')
-			{
-				char *arg_str_ptr=va_arg(ptr,char*);
+    if (c == '\0') c = ' '; // Replace null with space
+    
+    uint16_t attribute = (back << 12) | (fore << 8);
+    uint16_t *location = video_memory + cursor_y * SCREEN_WIDTH + cursor_x;
+    *location = c | attribute;
+    
+    cursor_x++;
+    if (cursor_x >= SCREEN_WIDTH) {
+        cursor_x = 0;
+        cursor_y++;
+        if (cursor_y >= SCREEN_HEIGHT) {
+            screen_scroll_once();
+            cursor_y = SCREEN_HEIGHT - 1;
+        }
+    }
+    move_cursor();
+}
 
-				insert_str(output_str,arg_str_ptr,offset);
-				
-				offset=offset+strlen(arg_str_ptr)-1;
-				
-			}
-			else if(*(charptr+1)=='d')
-			{
-				int arg_int=va_arg(ptr,int);
+void vga_putc_color(char c, vga_color_t back, vga_color_t fore)
+{
+    switch (c) {
+        case '\t':
+            for (int i = 0; i < TAB_LENGTH; i++) {
+                vga_putc_raw(' ', back, fore);
+            }
+            break;
+        case '\n':
+            cursor_x = 0;
+            cursor_y++;
+            if (cursor_y >= SCREEN_HEIGHT) {
+                screen_scroll_once();
+                cursor_y = SCREEN_HEIGHT - 1;
+            }
+            move_cursor();
+            break;
+        case '\r':
+            cursor_x = 0;
+            move_cursor();
+            break;
+        default:
+            vga_putc_raw(c, back, fore);
+    }
+}
 
-				char *temp_ptr=uintTostring(arg_int);
+void vga_putc(char c)
+{
+    vga_putc_color(c, BLACK, WHITE);
+}
 
-				insert_str(output_str,temp_ptr,offset);
-				
-				offset=offset+strlen(temp_ptr)-1;
-			}
-			else if(*(charptr+1)=='c')
-			{
-			
-			}
-			else if(*(charptr+1)=='H')
-			{
-				int arg_int=va_arg(ptr,int);
+void vga_puts_color(const char *str, vga_color_t back, vga_color_t fore)
+{
+    while (*str) {
+        vga_putc_color(*str++, back, fore);
+    }
+}
 
-				char*hexstrptr=num2hexstr(arg_int,1);
-				
-				insert_str(output_str,hexstrptr,offset);
+void vga_puts(const char *str)
+{
+    vga_puts_color(str, BLACK, WHITE);
+}
 
-				offset=offset+strlen(hexstrptr)-1;
-			} 
-			else if(*(charptr+1)=='h')
-			{
-				int arg_int=va_arg(ptr,int);
+static int vga_vprintf_color(vga_color_t back, vga_color_t fore, const char *format, va_list args)
+{
+    char buffer[32];
+    const char *p = format;
+    int chars_written = 0;
+    
+    while (*p) {
+        if (*p != '%') {
+            vga_putc_color(*p, back, fore);
+            chars_written++;
+            p++;
+            continue;
+        }
+        
+        p++; // Skip '%'
+        
+        // Format specifier
+        switch (*p) {
+            case 's': {
+                const char *str = va_arg(args, const char *);
+                if (!str) str = "(null)";
+                vga_puts_color(str, back, fore);
+                chars_written += strlen(str);
+                break;
+            }
+            case 'c': {
+                char c = (char)va_arg(args, int);
+                vga_putc_color(c, back, fore);
+                chars_written++;
+                break;
+            }
+            case 'd': {
+                int num = va_arg(args, int);
+                int_to_string(num, buffer, sizeof(buffer));
+                vga_puts_color(buffer, back, fore);
+                chars_written += strlen(buffer);
+                break;
+            }
+            case 'u': {
+                unsigned int num = va_arg(args, unsigned int);
+                uint_to_string(num, buffer, sizeof(buffer));
+                vga_puts_color(buffer, back, fore);
+                chars_written += strlen(buffer);
+                break;
+            }
+            case 'x': {
+                unsigned int num = va_arg(args, unsigned int);
+                num_to_hexstr(num, false, buffer, sizeof(buffer));
+                vga_puts_color(buffer, back, fore);
+                chars_written += strlen(buffer);
+                break;
+            }
+            case 'X': {
+                unsigned int num = va_arg(args, unsigned int);
+                num_to_hexstr(num, true, buffer, sizeof(buffer));
+                vga_puts_color(buffer, back, fore);
+                chars_written += strlen(buffer);
+                break;
+            }
+            case '%': {
+                vga_putc_color('%', back, fore);
+                chars_written++;
+                break;
+            }
+            default: {
+                vga_putc_color('%', back, fore);
+                vga_putc_color(*p, back, fore);
+                chars_written += 2;
+                break;
+            }
+        }
+        p++;
+    }
+    
+    return chars_written;
+}
 
-				char*hexstrptr=num2hexstr(arg_int,0);
-				
-				insert_str(output_str,hexstrptr,offset);
+void vga_printf_color(vga_color_t back, vga_color_t fore, const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vga_vprintf_color(back, fore, format, args);
+    va_end(args);
+}
 
-				offset=offset+strlen(hexstrptr)-1;
-			}
-		}
-	}
-	va_end(ptr);
-	puts_color(output_str,back,fore);
+void vga_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vga_vprintf_color(BLACK, WHITE, format, args);
+    va_end(args);
+}
+
+void vga_init(void)
+{
+    clear_screen();
 }

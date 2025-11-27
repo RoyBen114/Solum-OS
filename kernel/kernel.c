@@ -9,23 +9,12 @@ void kernel_main()
 {
     serial_init();
     vga_init();
-    serial_printf("\n=== SolumOS Graphics Test ===\n");
 
     parse_mb_info();
     
-    if (fb_info->fb_addr == 0) {
-        serial_printf("No framebuffer found!\n");
-    } else if (is_graphics_mode) {
-        // 图形模式测试
-        serial_printf("Graphics mode\n");
-    } else {
-        vga_printf("Hello");
-    }
-    
-    serial_printf("System ready\n");
-    
-    // 主循环
-    while (1) {
-        asm volatile ("hlt");
-    }
+    serial_printf("请输入一个整数和一个字符串 (例如: 123 hello): ");
+    int number;
+    char text[32];
+    int items = serial_scanf("%d %s", &number, text);
+    serial_printf("成功读取 %d 个参数: 数字=%d, 文本=%s\n", items, number, text);
 }

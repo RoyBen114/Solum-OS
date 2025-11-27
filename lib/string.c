@@ -1,160 +1,141 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "string.h"
 
-static int func(char *s,int n,int i)         
+void memcpy(void *dest, const void *src, size_t len)
 {
-    char bit[]={"0123456789ABCDEF"};
-    int len;
-    if(n==0)
-    {
-        strcpy(s,"");
-        return 0;
-    }
-    func(s,n/i,i);
-    len=strlen(s);
-    s[len]=bit[n%i];
-    s[len+1]='\0';
-    return 1;
-}
-
-inline char *num2hexstr(int number,int need0x)
-{	if (number!=0)
-	{
-	static char static_hexstr[11]={0};
-	static_hexstr[0]='0';
-	static_hexstr[1]='x';
-	char temp_arry[9]={0};
-	char *temp_arry_ptr=temp_arry;
-	func(temp_arry_ptr,number,16);
-	char temp_arry2[9]={0};
-	char *temp_arry2_ptr=temp_arry2;
-	strcpy(temp_arry2_ptr,temp_arry_ptr);
-	int offset=8-strlen(temp_arry);
-	strcpy(temp_arry+offset,temp_arry2);
-	for(int i=0;i<offset;i++)
-		*(temp_arry+i)='0';
-	if(need0x)
-		strcpy(static_hexstr+2,temp_arry);
-	else
-		strcpy(static_hexstr,temp_arry);
-	return static_hexstr;
-	}
-	else 
-	{
-		if(need0x)
-			return "0x00000000";
-		else
-			return "00000000";
-	}
-}
-
-
-inline void memcpy(uint8_t *dest ,const uint8_t *src,uint32_t len)
-{
-	for(;len!=0;len--)
-	{
-		*dest=*src;
-		dest++;
-		src++;
-	}
-}
-
-inline void memset(void *dest,uint8_t val ,uint32_t len)
-{
-	uint8_t *dst = (uint8_t *)dest;
-
-    for ( ; len != 0; len--) {
-        *dst++ = val;
+    uint8_t *d = (uint8_t *)dest;
+    const uint8_t *s = (const uint8_t *)src;
+    
+    for (size_t i = 0; i < len; i++) {
+        d[i] = s[i];
     }
 }
 
-inline void bzero(void *dest, uint32_t len)
+void memset(void *dest, uint8_t val, size_t len)
+{
+    uint8_t *d = (uint8_t *)dest;
+    for (size_t i = 0; i < len; i++) {
+        d[i] = val;
+    }
+}
+
+void bzero(void *dest, size_t len)
 {
     memset(dest, 0, len);
 }
 
-inline int strcmp(const char *str1,const char *str2)
+int strcmp(const char *str1, const char *str2)
 {
-	while(1){
-		if (*str1=='\0'&&*str2=='\0')
-			return 0;
-		else if ((int)*str1>(int)*str2){
-			return 1;
-		}
-		else if((int)*str1>(int)*str2){
-			return -1;
-		}
-		else{
-			str1++;
-			str2++;
-		}
-	}
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(const unsigned char *)str1 - *(const unsigned char *)str2;
 }
 
-inline int strlen(const char *src)
+size_t strlen(const char *src)
 {
-	int i=0;
-	while(*(src+i)!='\0')
-		i++;
-	return i;
+    size_t len = 0;
+    while (src[len] != '\0') {
+        len++;
+    }
+    return len;
 }
 
-inline char *strcpy(char *dest, const char *src)
+char *strcpy(char *dest, const char *src)
 {
-	char *dest_head=dest;
-	while(*(src)!='\0')
-	{
-		*dest=*src;
-		dest++;
-		src++;
-	}
-	*dest='\0';
-	dest=dest_head;
-	return dest;
+    char *d = dest;
+    while ((*d++ = *src++) != '\0');
+    return dest;
 }
 
-inline char *strcat(char *dest, const char *src)
+char *strcat(char *dest, const char *src)
 {
-	char *pointer=dest;
-	for(;*pointer!='\0';pointer++);
-	strcpy(pointer,src);
-	return dest;		
+    char *d = dest;
+    while (*d != '\0') d++;
+    while ((*d++ = *src++) != '\0');
+    return dest;
 }
 
-inline char *uintTostring(uint32_t num)
+char *uint_to_string(uint32_t num, char *buffer, size_t buffer_size)
 {
-	char i2stable[10]={'0','1','2','3','4','5','6','7','8','9'};
-	static char m[32]={0};
-	char *str_ptr=m;
-	char *head=str_ptr;
-	int i=0;
-	for(;num>=10;i++)
-	{
-		uint32_t num_=num/10;
-		uint32_t index=num-(num_*10);
-		num=num_;
-		*str_ptr=i2stable[index];
-		str_ptr++;
-	}
-	*str_ptr=i2stable[num];
-	*(str_ptr+1)='\0';
-	return strrevers(head);
+    if (buffer_size == 0) return buffer;
+    
+    char *ptr = buffer;
+    char *end = buffer + buffer_size - 1;
+    
+    if (num == 0) {
+        if (ptr < end) *ptr++ = '0';
+        *ptr = '\0';
+        return buffer;
+    }
+    
+    // Convert digits in reverse order
+    char temp[32];
+    char *temp_ptr = temp;
+    
+    while (num > 0 && temp_ptr < temp + sizeof(temp) - 1) {
+        *temp_ptr++ = '0' + (num % 10);
+        num /= 10;
+    }
+    
+    // Copy in correct order
+    while (temp_ptr > temp && ptr < end) {
+        *ptr++ = *--temp_ptr;
+    }
+    *ptr = '\0';
+    
+    return buffer;
 }
 
-inline  char *strrevers(char *str)
+char *int_to_string(int32_t num, char *buffer, size_t buffer_size)
 {
-	char *str_head=str;
-	int lenth=strlen(str);
-	int ptr_h=0;
-	int ptr_t=--lenth;
-	for(;ptr_h<ptr_t;)
-	{
-		char temp=*(str_head+ptr_t);
-		*(str_head+ptr_t)=*(str_head+ptr_h);
-		*(str_head+ptr_h)=temp;
-		ptr_h++;
-		ptr_t--;
-	}
-	return str_head;
+    if (buffer_size == 0) return buffer;
+    
+    if (num < 0) {
+        if (buffer_size > 1) {
+            buffer[0] = '-';
+            return uint_to_string(-num, buffer + 1, buffer_size - 1);
+        }
+    }
+    return uint_to_string(num, buffer, buffer_size);
+}
+
+char *num_to_hexstr(uint32_t number, bool need_0x, char *buffer, size_t buffer_size)
+{
+    if (buffer_size == 0) return buffer;
+    
+    const char hex_chars[] = "0123456789ABCDEF";
+    char *ptr = buffer;
+    char *end = buffer + buffer_size - 1;
+    
+    if (need_0x) {
+        if (ptr < end) *ptr++ = '0';
+        if (ptr < end) *ptr++ = 'x';
+    }
+    
+    // Convert each nibble
+    for (int i = 28; i >= 0; i -= 4) {
+        if (ptr < end) {
+            *ptr++ = hex_chars[(number >> i) & 0xF];
+        }
+    }
+    *ptr = '\0';
+    
+    return buffer;
+}
+
+char *strreverse(char *str)
+{
+    if (!str) return str;
+    
+    size_t len = strlen(str);
+    for (size_t i = 0; i < len / 2; i++) {
+        char temp = str[i];
+        str[i] = str[len - i - 1];
+        str[len - i - 1] = temp;
+    }
+    return str;
 }
