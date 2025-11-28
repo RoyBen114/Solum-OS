@@ -20,6 +20,15 @@
 TARGET = Solum.iso
 KELF = kernel.elf
 LINKSCR = linker.ld
+BUILD ?= release
+INCDIR := $(CURDIR)/include
+
+ifeq ($(BUILD),release)
+CFLAGS := -c -O2 -I$(INCDIR) -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -mno-red-zone -ffreestanding
+else ifeq ($(BUILD),debug)
+CFLAGS := -g -c -O0 -I$(INCDIR) -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -mno-red-zone -ffreestanding
+endif
+
 BOOT_OBJ = boot/boot.o
 KERN_OBJ = kernel/kernel.o
 INFO_OBJ = boot/info.o
@@ -41,13 +50,13 @@ $(BOOT_OBJ): $(BOOT_S)
 	make -C boot BOOT_O
 
 $(INFO_OBJ): $(INFO_C)
-	make -C boot INFO_O
+	make -C boot INFO_O CFLAGS="$(CFLAGS)" 
 
 $(KERN_OBJ): $(KERN_C)
-	make -C kernel KERN_O
+	make -C kernel KERN_O CFLAGS="$(CFLAGS)" 
 
 $(LIB_OBJ): $(LIB_C)
-	make -C lib all
+	make -C lib all CFLAGS="$(CFLAGS)" 
 
 clean: 
 	make -C boot clean
@@ -57,11 +66,12 @@ clean:
 	rm -f $(KELF)
 
 debug_B:
-	make
-	qemu-system-x86_64 -cdrom $(TARGET) -m 1G -serial stdio
+	make BUILD=debug
+	qemu-system-x86_64 -cdrom $(TARGET) -m 1G -serial stdio -S -s
 
 debug_U:
-	make
-	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -cdrom $(TARGET) -m 1G -serial stdio
+	make BUILD=debug
+	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -cdrom $(TARGET) -m 1G -serial stdio -S -s &
+	gdb $(KELF)
 
-.PHONY: run debug_B debug_U
+.PHONY: debug_B debug_U

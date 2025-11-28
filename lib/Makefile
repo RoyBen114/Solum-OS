@@ -19,8 +19,9 @@
 
 C_SRC = $(wildcard *.c)
 O_OBJ = $(patsubst %.c, %.o, $(C_SRC))
+
 all:
-	gcc -c -I../include -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -mno-red-zone -ffreestanding $(C_SRC) 
+	gcc $(CFLAGS) $(C_SRC)
 
 clean:
 	rm -f $(O_OBJ)
