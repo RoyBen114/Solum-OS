@@ -24,16 +24,18 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-void memcpy(void *dest, const void *src, size_t len);
-void memset(void *dest, uint8_t val, size_t len);
-void bzero(void *dest, size_t len);
-int strcmp(const char *str1, const char *str2);
-char *strcpy(char *dest, const char *src);
-char *strcat(char *dest, const char *src);
-size_t strlen(const char *src);
-char *uint_to_string(uint32_t num, char *buffer, size_t buffer_size);
-char *int_to_string(int32_t num, char *buffer, size_t buffer_size);
-char *num_to_hexstr(uint32_t number, bool need_0x, char *buffer, size_t buffer_size);
-char *strreverse(char *str);
+void k_memcpy(void *dest, const void *src, size_t len);
+void k_memset(void *dest, uint8_t val, size_t len);
+void k_bzero(void *dest, size_t len);
+int k_strcmp(const char *str1, const char *str2);
+char *k_strcpy(char *dest, const char *src);
+char *k_strcat(char *dest, const char *src);
+size_t k_strlen(const char *src);
+char *k_uint_to_string(uint32_t num, char *buffer, size_t buffer_size);
+char *k_int_to_string(int32_t num, char *buffer, size_t buffer_size);
+char *k_uint64_to_string(uint64_t num, char *buffer, size_t buffer_size);
+char *k_int64_to_string(int64_t num, char *buffer, size_t buffer_size);
+char *k_num_to_hexstr(uint64_t number, bool need_0x, char *buffer, size_t buffer_size);
+char *k_strreverse(char *str);
 
 #endif

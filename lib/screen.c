@@ -170,7 +170,7 @@ static int vga_vprintk_color(vga_color_t back, vga_color_t fore, const char *for
                 const char *str = va_arg(args, const char *);
                 if (!str) str = "(null)";
                 vga_puts_color(str, back, fore);
-                chars_written += strlen(str);
+                chars_written += k_strlen(str);
                 break;
             }
             case 'c': {
@@ -181,30 +181,30 @@ static int vga_vprintk_color(vga_color_t back, vga_color_t fore, const char *for
             }
             case 'd': {
                 int num = va_arg(args, int);
-                int_to_string(num, buffer, sizeof(buffer));
+                k_int_to_string(num, buffer, sizeof(buffer));
                 vga_puts_color(buffer, back, fore);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'u': {
                 unsigned int num = va_arg(args, unsigned int);
-                uint_to_string(num, buffer, sizeof(buffer));
+                k_uint_to_string(num, buffer, sizeof(buffer));
                 vga_puts_color(buffer, back, fore);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'x': {
                 unsigned int num = va_arg(args, unsigned int);
-                num_to_hexstr(num, false, buffer, sizeof(buffer));
+                k_num_to_hexstr((uint64_t)num, false, buffer, sizeof(buffer));
                 vga_puts_color(buffer, back, fore);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'X': {
                 unsigned int num = va_arg(args, unsigned int);
-                num_to_hexstr(num, true, buffer, sizeof(buffer));
+                k_num_to_hexstr((uint64_t)num, true, buffer, sizeof(buffer));
                 vga_puts_color(buffer, back, fore);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case '%': {

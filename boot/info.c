@@ -33,27 +33,32 @@ void parse_mb_info()
 {
     mbi = (struct multiboot2_info *)multiboot2_info_addr;
     current_tag = mbi->tags;
+    /* Add bounds check to avoid infinite loop if framebuffer tag not present */
+    uint8_t *mb_end = (uint8_t *)mbi + mbi->total_size;
 
-    while (1)
-    {
+    while (current_tag + sizeof(struct multiboot2_tag) <= mb_end) {
         tag = (struct multiboot2_tag *)current_tag;
 
-        // find framebuffer tag (8)
-        if (tag->type == 8)
-        {
+        /* validate tag size */
+        if (tag->size == 0) break;
+
+        /* find framebuffer tag (8) */
+        if (tag->type == 8) {
+            if ((uint8_t *)tag + tag->size > mb_end) break; /* malformed */
+
             fb_info = (struct multiboot2_tag_framebuffer *)tag;
 
-            if (fb_info->fb_width > 80 || fb_info->fb_height > 25 || fb_info->fb_bpp > 16)
-            {
+            if (fb_info->fb_width > 80 || fb_info->fb_height > 25 || fb_info->fb_bpp > 16) {
                 is_graphics_mode = 1;
-            }
-            else
-            {
+            } else {
                 is_graphics_mode = 0;
             }
-            break;
+            return;
         }
 
         current_tag += (tag->size + 7) & ~7;
     }
+
+    /* If we reach here, framebuffer not found or malformed - fallback to text mode */
+    is_graphics_mode = 0;
 }

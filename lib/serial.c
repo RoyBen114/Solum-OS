@@ -51,12 +51,12 @@ void serial_init(void)
 void serial_putc(char c)
 {
     while (!serial_is_transmit_empty());
-    outb(SERIAL_PORT, c);
-    
+    /* Send CR before LF to produce CRLF sequence on terminals expecting it */
     if (c == '\n') {
         while (!serial_is_transmit_empty());
         outb(SERIAL_PORT, '\r');
     }
+    outb(SERIAL_PORT, c);
 }
 
 void serial_puts(const char *str)
@@ -132,7 +132,7 @@ static int serial_vprintk(const char *format, va_list args)
                 const char *str = va_arg(args, const char *);
                 if (!str) str = "(null)";
                 serial_puts(str);
-                chars_written += strlen(str);
+                chars_written += k_strlen(str);
                 break;
             }
             case 'c': {
@@ -145,69 +145,68 @@ static int serial_vprintk(const char *format, va_list args)
             case 'i': {
                 if (long_count >= 2) {
                     int64_t num = va_arg(args, int64_t);
-                    // Simplified - use our basic conversion
-                    int_to_string((int32_t)num, buffer, sizeof(buffer));
+                    k_int64_to_string(num, buffer, sizeof(buffer));
                 } else if (long_count == 1) {
                     long num = va_arg(args, long);
-                    int_to_string((int32_t)num, buffer, sizeof(buffer));
+                    k_int64_to_string((int64_t)num, buffer, sizeof(buffer));
                 } else {
                     int num = va_arg(args, int);
-                    int_to_string(num, buffer, sizeof(buffer));
+                    k_int_to_string(num, buffer, sizeof(buffer));
                 }
                 serial_puts(buffer);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'u': {
                 if (long_count >= 2) {
                     uint64_t num = va_arg(args, uint64_t);
-                    uint_to_string((uint32_t)num, buffer, sizeof(buffer));
+                    k_uint64_to_string(num, buffer, sizeof(buffer));
                 } else if (long_count == 1) {
                     unsigned long num = va_arg(args, unsigned long);
-                    uint_to_string((uint32_t)num, buffer, sizeof(buffer));
+                    k_uint64_to_string((uint64_t)num, buffer, sizeof(buffer));
                 } else {
                     unsigned int num = va_arg(args, unsigned int);
-                    uint_to_string(num, buffer, sizeof(buffer));
+                    k_uint_to_string(num, buffer, sizeof(buffer));
                 }
                 serial_puts(buffer);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'x': {
                 if (long_count >= 2) {
                     uint64_t num = va_arg(args, uint64_t);
-                    num_to_hexstr((uint32_t)num, false, buffer, sizeof(buffer));
+                    k_num_to_hexstr(num, false, buffer, sizeof(buffer));
                 } else if (long_count == 1) {
                     unsigned long num = va_arg(args, unsigned long);
-                    num_to_hexstr((uint32_t)num, false, buffer, sizeof(buffer));
+                    k_num_to_hexstr((uint64_t)num, false, buffer, sizeof(buffer));
                 } else {
                     unsigned int num = va_arg(args, unsigned int);
-                    num_to_hexstr(num, false, buffer, sizeof(buffer));
+                    k_num_to_hexstr((uint64_t)num, false, buffer, sizeof(buffer));
                 }
                 serial_puts(buffer);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'X': {
                 if (long_count >= 2) {
                     uint64_t num = va_arg(args, uint64_t);
-                    num_to_hexstr((uint32_t)num, true, buffer, sizeof(buffer));
+                    k_num_to_hexstr(num, true, buffer, sizeof(buffer));
                 } else if (long_count == 1) {
                     unsigned long num = va_arg(args, unsigned long);
-                    num_to_hexstr((uint32_t)num, true, buffer, sizeof(buffer));
+                    k_num_to_hexstr((uint64_t)num, true, buffer, sizeof(buffer));
                 } else {
                     unsigned int num = va_arg(args, unsigned int);
-                    num_to_hexstr(num, true, buffer, sizeof(buffer));
+                    k_num_to_hexstr((uint64_t)num, true, buffer, sizeof(buffer));
                 }
                 serial_puts(buffer);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case 'p': {
                 void *ptr = va_arg(args, void*);
-                num_to_hexstr((uint32_t)(uintptr_t)ptr, true, buffer, sizeof(buffer));
+                k_num_to_hexstr((uint64_t)(uintptr_t)ptr, true, buffer, sizeof(buffer));
                 serial_puts(buffer);
-                chars_written += strlen(buffer);
+                chars_written += k_strlen(buffer);
                 break;
             }
             case '%': {
