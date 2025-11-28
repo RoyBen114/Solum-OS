@@ -15,6 +15,6 @@ void kernel_main()
     serial_printk("Welcome to Solum OS!\n");
     vga_printk("Version (a0.01)\n");
     serial_printk("Version (a0.01)\n");
-    vga_printk("By Roy 2025\n");
-    serial_printk("By Roy 2025\n");
+    vga_printk("By Roy - 2025\n");
+    serial_printk("By Roy - 2025\n");
 }
