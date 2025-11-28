@@ -71,7 +71,6 @@ debug_B:
 
 debug_U:
 	make BUILD=debug
-	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -cdrom $(TARGET) -m 1G -serial stdio -S -s &
-	gdb $(KELF)
+	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -cdrom $(TARGET) -m 1G -serial stdio -S -s
 
 .PHONY: debug_B debug_U
