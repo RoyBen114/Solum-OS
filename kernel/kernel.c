@@ -29,7 +29,7 @@
 void kernel_main() 
 {
     /* initialize microkernel subsystems */
-    ipc_init();
+    /*ipc_init();
     arbitration_init();
 
     /* parse boot info as before */
