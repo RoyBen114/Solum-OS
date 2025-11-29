@@ -22,20 +22,25 @@
 #include <stdarg.h>
 #include <boot/info.h>
 #include <lib/serial.h>
+#include <lib/screen.h>
 #include <kernel/module.h>
 #include <kernel/ipc.h>
 #include <kernel/arbitration.h>
 
 void kernel_main() 
 {
-    /* initialize microkernel subsystems */
-    /*ipc_init();
-    arbitration_init();
+    /*
+    ipc_init();
+    arbitration_init();*/
 
-    /* parse boot info as before */
     parse_mb_info();
+    serial_init();
+    vga_init();
 
     serial_printk("Welcome to Solum OS!\n");
+    vga_printk("Welcome to Solum OS!\n");
     serial_printk("Version (a0.01)\n");
+    vga_printk("Version (a0.01)\n");
     serial_printk("By Roy - 2025\n");
+    vga_printk("By Roy - 2025\n");
 }
