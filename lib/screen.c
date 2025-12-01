@@ -237,7 +237,7 @@ void vga_printk(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    vga_vprintk_color(BLACK, WHITE, format, args);
+    vga_vprintk_color(BLACK, LIGHT_GREY, format, args);
     va_end(args);
 }
 

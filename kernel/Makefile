@@ -17,13 +17,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-C_SRC = kernel.c
-KERN_OBJ = kernel.o
+C_SRC = $(wildcard *.c)
+O_OBJ = $(patsubst %.c, %.o, $(C_SRC))
 
 KERN_O:
-	gcc $(CFLAGS) $(C_SRC) -o $(KERN_OBJ)
+	gcc $(CFLAGS) $(C_SRC)
 
 clean:
-	rm -f $(KERN_OBJ)
+	rm -f $(O_OBJ)
 
 .PHONY: clean KERN_O

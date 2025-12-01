@@ -248,7 +248,7 @@ size_t k_strlen(const char *src)
         if (((v - 0x0101010101010101ULL) & ~v & 0x8080808080808080ULL) != 0) {
             const uint8_t *p = (const uint8_t *)w;
             for (int i = 0; i < 8; i++) {
-                if (p[i] == 0) return (size_t)(p + i - src);
+                if (p[i] == 0) return (size_t)((p + i) - (const uint8_t *)src);
             }
         }
         w++;

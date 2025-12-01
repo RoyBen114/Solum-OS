@@ -24,18 +24,18 @@ BUILD ?= release
 INCDIR := $(CURDIR)/include
 
 ifeq ($(BUILD),release)
-CFLAGS := -c -O2 -I$(INCDIR) -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -mno-red-zone -ffreestanding
+CFLAGS := -c -O3 -I$(INCDIR) -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -mno-red-zone -ffreestanding
 else ifeq ($(BUILD),debug)
 CFLAGS := -g -c -O0 -I$(INCDIR) -fno-builtin -nostdlib -nostartfiles -nodefaultlibs -mno-red-zone -ffreestanding
 endif
 
-BOOT_OBJ = boot/boot.o
-KERN_OBJ = kernel/kernel.o
-INFO_OBJ = boot/info.o
 BOOT_S = boot/boot.s
-KERN_C = kernel/kernel.c
+KERN_C = $(shell find kernel/ -name "*.c")
 INFO_C = boot/info.c
 LIB_C = $(shell find lib/ -name "*.c")
+BOOT_OBJ = boot/boot.o
+KERN_OBJ = $(patsubst %.c, %.o, $(KERN_C))
+INFO_OBJ = boot/info.o
 LIB_OBJ = $(patsubst %.c, %.o, $(LIB_C))
 
 $(TARGET): $(KELF) grub.cfg
