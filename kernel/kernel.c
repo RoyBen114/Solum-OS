@@ -23,16 +23,9 @@
 #include <boot/info.h>
 #include <lib/serial.h>
 #include <lib/screen.h>
-#include <kernel/module.h>
-#include <kernel/ipc.h>
-#include <kernel/arbitration.h>
 
 void kernel_main() 
 {
-    /*
-    ipc_init();
-    arbitration_init();*/
-
     parse_mb_info();
     serial_init();
     vga_init();
