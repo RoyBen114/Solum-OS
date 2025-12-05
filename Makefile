@@ -38,7 +38,7 @@ INFO_OBJ = boot/info.o
 KERN_OBJ = $(patsubst %.c, %.o, $(KERN_C))
 LIB_OBJ = $(patsubst %.c, %.o, $(LIB_C))
 
-$(ISO): $(KELF) grub.cfg
+$(ISO): $(KELF) ISODir/boot/grub/grub.cfg
 	cp $(KELF) ISODir/SolumOS/$(KELF)
 	grub-mkrescue -o Solum.iso ISODir/
 
@@ -52,10 +52,10 @@ $(INFO_OBJ): $(INFO_C)
 	make -C boot INFO_O CFLAGS="$(CFLAGS)" 
 
 $(KERN_OBJ): $(KERN_C)
-	make -C kernel KERN_O CFLAGS="$(CFLAGS)" 
+	make -C kernel CFLAGS="$(CFLAGS)" 
 
 $(LIB_OBJ): $(LIB_C)
-	make -C lib LIB_O CFLAGS="$(CFLAGS)" 
+	make -C lib CFLAGS="$(CFLAGS)" 
 
 clean: 
 	make -C boot clean
@@ -72,4 +72,4 @@ debug_U:
 	make BUILD=debug
 	qemu-system-x86_64 -bios /usr/share/ovmf/OVMF.fd -cdrom $(ISO) -m 1G -serial stdio -S -s
 
-.PHONY: debug_B debug_U
+.PHONY: clean debug_B debug_U

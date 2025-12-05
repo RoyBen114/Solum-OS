@@ -17,13 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-C_SRC = $(wildcard *.c)
-O_OBJ = $(patsubst %.c, %.o, $(C_SRC))
-
-KERN_O:
-	gcc $(CFLAGS) $(C_SRC)
+*.o: *.c
+	gcc $(CFLAGS) $^
 
 clean:
-	rm -f $(O_OBJ)
+	rm -f *.o
 
-.PHONY: clean KERN_O
+.PHONY: clean
