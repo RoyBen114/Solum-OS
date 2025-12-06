@@ -177,7 +177,9 @@ int printk_with_level(int level, const char *format, va_list args)
 
     size_t flen = k_strlen(finalbuf);
 
-    tty_write(0, finalbuf, flen);
+    vga_color_t color = level_color(level);
+    
+    tty_write(0, finalbuf, flen, color, BLACK);
     return (int)flen;
 }
 

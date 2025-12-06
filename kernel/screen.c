@@ -93,12 +93,12 @@ static void vga_putc_raw(char c, int back, int fore)
     move_cursor();
 }
 
-void vga_putc(char c)
+void vga_putc(char c, vga_color_t fore, vga_color_t back)
 {
     switch (c) {
         case '\t':
             for (int i = 0; i < TAB_LENGTH; i++) {
-                vga_putc_raw(' ', 0, 15);
+                vga_putc_raw(' ', back, fore);
             }
             break;
         case '\n':
@@ -115,14 +115,14 @@ void vga_putc(char c)
             move_cursor();
             break;
         default:
-            vga_putc_raw(c, 0, 15);
+            vga_putc_raw(c, back, fore);
     }
 }
 
-void scr_write(const char *buf, size_t len)
+void scr_write(const char *buf, size_t len, vga_color_t fore, vga_color_t back)
 {
     for (size_t i = 0; i < len; i++) {
-        vga_putc(buf[i]);
+        vga_putc(buf[i], fore, back);
     }
 }
 

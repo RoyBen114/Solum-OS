@@ -17,15 +17,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <stdint.h>
 #include <stddef.h>
-#include <stdarg.h>
 #include <boot/info.h>
 #include <kernel/printk.h>
+#include <kernel/tty.h>
 
 void main() 
 {
     parse_mb_info();
+    tty_init();
 
-    printk("Hello!");
+    printk("Welcome to Solum OS!\n");
+    printk("Version (a0.01)\n");
+    printk("By Roy - 2025\n");
 }

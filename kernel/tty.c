@@ -29,6 +29,8 @@
 static char tty_buffer[TTY_BUFFER_SIZE];
 static size_t tty_head = 0; // next write index  
 static size_t tty_tail = 0; // next read index  
+static vga_color_t tty_current_fore = LIGHT_GREY;
+static vga_color_t tty_current_back = BLACK;
 
 // Internal: amount of data currently in buffer  
 static inline size_t tty_count(void)
@@ -46,9 +48,16 @@ void tty_init(void)
 
 typedef char _tty_check[(TTY_BUFFER_SIZE & (TTY_BUFFER_SIZE - 1)) == 0 ? 1 : -1];
 
-size_t tty_write(int fd, const char *buf, size_t len)
+void tty_set_color(vga_color_t fore, vga_color_t back)
+{
+    tty_current_fore = fore;
+    tty_current_back = back;
+}
+
+size_t tty_write(int fd, const char *buf, size_t len, vga_color_t fore, vga_color_t back)
 {
     (void)fd;
+    tty_set_color(fore, back);
     size_t written = 0;
     for (size_t i = 0; i < len; i++) {
         unsigned char c = (unsigned char)*(buf + i);
@@ -63,12 +72,6 @@ size_t tty_write(int fd, const char *buf, size_t len)
 
     tty_flush();
     return written;
-}
-
-size_t tty_putc(char c)
-{
-    char ch = c;
-    return tty_write(0, &ch, 1);
 }
 
 size_t tty_read(char *dest, size_t len)
@@ -92,7 +95,7 @@ void tty_flush(void)
             tmp[i] = tty_buffer[tty_tail];
             tty_tail = (tty_tail + 1) & (TTY_BUFFER_SIZE - 1);
         }
-        scr_write(tmp, to_copy);
+        scr_write(tmp, to_copy, tty_current_fore, tty_current_back);
         srl_write(tmp, to_copy);
 
         cnt = tty_count();

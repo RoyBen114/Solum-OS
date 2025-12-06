@@ -23,7 +23,26 @@
 #include <stdint.h>
 #include <stdarg.h>
 
+typedef enum {
+    BLACK = 0,
+    BLUE = 1,
+    GREEN = 2,
+    CYAN = 3,
+    RED = 4,
+    MAGENTA = 5,
+    BROWN = 6,
+    LIGHT_GREY = 7,
+    DARK_GREY = 8,
+    LIGHT_BLUE = 9,
+    LIGHT_GREEN = 10,
+    LIGHT_CYAN = 11,
+    LIGHT_RED = 12,
+    LIGHT_MAGENTA = 13,
+    YELLOW = 14,   
+    WHITE = 15
+} vga_color_t;
+
 void scr_init(void);
-void scr_write(const char *buf, size_t len);
+void scr_write(const char *buf, size_t len, vga_color_t fore, vga_color_t back);
 
 #endif

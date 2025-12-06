@@ -17,14 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KERNEL_TTY_H
-#define KERNEL_TTY_H
+#ifndef TTY_H
+#define TTY_H
 
 #include <stddef.h>
+#include <kernel/screen.h>
 
 void tty_init(void);
-size_t tty_write(int fd, const char *buf, size_t len);
-size_t tty_putc(char c);
+size_t tty_write(int fd, const char *buf, size_t len, vga_color_t fore, vga_color_t back);
 size_t tty_read(char *dest, size_t len);
 void tty_flush(void);
 
