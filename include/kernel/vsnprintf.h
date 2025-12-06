@@ -21,7 +21,8 @@
 #define VSPRINTF_H
 
 #include <stdarg.h>
+#include <stddef.h>
 
-int vsprintf(char *out, const char *fmt, va_list args);
+int vsnprintf(char *out, size_t out_sz, const char *fmt, va_list args);
 
 #endif

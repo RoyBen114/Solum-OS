@@ -22,9 +22,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <lib/string.h>
-#include <kernel/vsprintf.h>
+#include <kernel/vsnprintf.h>
 
-static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list args)
+int vsnprintf(char *out, size_t out_sz, const char *fmt, va_list args)
 {
     char *o = out;
     size_t rem = out_sz ? out_sz - 1 : 0; // leave space for NUL
@@ -129,9 +129,4 @@ static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list ar
 
     if (out_sz) *o = '\0';
     return (int)(out_sz ? (out_sz - 1 - rem) : 0);
-}
-
-int vsprintf(char *out, const char *fmt, va_list args)
-{
-    return vsnprintf_local(out, 32768, fmt, args);
 }

@@ -25,7 +25,7 @@
 #include <kernel/serial.h>
 #include <kernel/screen.h>
 #include <kernel/tty.h>
-#include <kernel/vsprintf.h>
+#include <kernel/vsnprintf.h>
 #include <lib/string.h>
 
 static const char *level_tag(int level)
@@ -55,119 +55,11 @@ static vga_color_t level_color(int level)
     }
 }
 
-static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list args)
-{
-    char *o = out;
-    size_t rem = out_sz ? out_sz - 1 : 0; // leave space for NUL
-    const char *p = fmt;
-    char tmp[64];
-
-    while (*p && rem) {
-        if (*p != '%') {
-            *o++ = *p++;
-            rem--;
-            continue;
-        }
-        p++; // skip % 
-        int long_count = 0;
-        while (*p == 'l') { long_count++; p++; }
-
-        switch (*p) {
-            case 's': {
-                const char *s = va_arg(args, const char *);
-                if (!s) s = "(null)";
-                size_t l = k_strlen(s);
-                if (l > rem) l = rem;
-                for (size_t i = 0; i < l; i++) { *o++ = s[i]; }
-                rem -= l;
-                break;
-            }
-            case 'c': {
-                char c = (char)va_arg(args, int);
-                if (rem) { *o++ = c; rem--; }
-                break;
-            }
-            case 'd': case 'i': {
-                if (long_count >= 2) {
-                    k_int64_to_string(va_arg(args, int64_t), tmp, sizeof(tmp));
-                } else if (long_count == 1) {
-                    k_int64_to_string((int64_t)va_arg(args, long), tmp, sizeof(tmp));
-                } else {
-                    k_int_to_string(va_arg(args, int), tmp, sizeof(tmp));
-                }
-                size_t l = k_strlen(tmp);
-                if (l > rem) l = rem;
-                for (size_t i = 0; i < l; i++) *o++ = tmp[i];
-                rem -= l;
-                break;
-            }
-            case 'u': {
-                if (long_count >= 2) {
-                    k_uint64_to_string(va_arg(args, uint64_t), tmp, sizeof(tmp));
-                } else if (long_count == 1) {
-                    k_uint64_to_string((uint64_t)va_arg(args, unsigned long), tmp, sizeof(tmp));
-                } else {
-                    k_uint_to_string(va_arg(args, unsigned int), tmp, sizeof(tmp));
-                }
-                size_t l = k_strlen(tmp);
-                if (l > rem) l = rem;
-                for (size_t i = 0; i < l; i++) *o++ = tmp[i];
-                rem -= l;
-                break;
-            }
-            case 'x': case 'X': {
-                bool upper = (*p == 'X');
-                if (long_count >= 2) {
-                    k_num_to_hexstr(va_arg(args, uint64_t), false, tmp, sizeof(tmp));
-                } else if (long_count == 1) {
-                    k_num_to_hexstr((uint64_t)va_arg(args, unsigned long), false, tmp, sizeof(tmp));
-                } else {
-                    k_num_to_hexstr((uint64_t)va_arg(args, unsigned int), false, tmp, sizeof(tmp));
-                }
-                // tmp contains uppercase hex by implementation; if lower requested, convert
-                if (!upper) {
-                    for (size_t i = 0; i < k_strlen(tmp); i++) {
-                        char c = tmp[i];
-                        if (c >= 'A' && c <= 'F') tmp[i] = c - 'A' + 'a';
-                    }
-                }
-                size_t l = k_strlen(tmp);
-                if (l > rem) l = rem;
-                for (size_t i = 0; i < l; i++) *o++ = tmp[i];
-                rem -= l;
-                break;
-            }
-            case 'p': {
-                void *ptr = va_arg(args, void*);
-                k_num_to_hexstr((uint64_t)(uintptr_t)ptr, true, tmp, sizeof(tmp));
-                size_t l = k_strlen(tmp);
-                if (l > rem) l = rem;
-                for (size_t i = 0; i < l; i++) *o++ = tmp[i];
-                rem -= l;
-                break;
-            }
-            case '%': {
-                if (rem) { *o++ = '%'; rem--; }
-                break;
-            }
-            default: {
-                if (rem) { *o++ = '%'; rem--; }
-                if (rem) { *o++ = *p; rem--; }
-                break;
-            }
-        }
-        if (*p) p++;
-    }
-
-    if (out_sz) *o = '\0';
-    return (int)(out_sz ? (out_sz - 1 - rem) : 0);
-}
-
 int printk_with_level(int level, const char *format, va_list args)
 {
     // Format into kernel buffer
-    static char kbuf[2048];
-    int len = vsprintf(kbuf, format, args);
+    static char kbuf[1024];
+    int len = vsnprintf(kbuf, sizeof(kbuf), format, args);
 
     // Prepend tag by moving buffer content if needed
     const char *tag = level_tag(level);
