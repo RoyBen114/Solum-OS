@@ -21,39 +21,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <kernel/printk.h>
-#include <kernel/serial.h>
-#include <kernel/screen.h>
-#include <kernel/tty.h>
-#include <kernel/vsprintf.h>
 #include <lib/string.h>
-
-static const char *level_tag(int level)
-{
-    switch (level) {
-        case 0: return "[EMERG] ";
-        case 1: return "[ALERT] ";
-        case 2: return "[CRIT] ";
-        case 3: return "[ERR] ";
-        case 4: return "[WARN] ";
-        case 5: return "[NOTICE] ";
-        case 6: return "[INFO] ";
-        case 7: return "[DEBUG] ";
-        default: return "[INFO] ";
-    }
-}
-
-static vga_color_t level_color(int level)
-{
-    switch (level) {
-        case 0: case 1: case 2: case 3: return LIGHT_RED;
-        case 4: return YELLOW;
-        case 5: return LIGHT_GREEN;
-        case 6: return LIGHT_GREY;
-        case 7: return LIGHT_CYAN;
-        default: return LIGHT_GREY;
-    }
-}
+#include <kernel/vsprintf.h>
 
 static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list args)
 {
@@ -68,7 +37,7 @@ static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list ar
             rem--;
             continue;
         }
-        p++; // skip % 
+        p++; // skip %
         int long_count = 0;
         while (*p == 'l') { long_count++; p++; }
 
@@ -124,7 +93,6 @@ static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list ar
                 } else {
                     k_num_to_hexstr((uint64_t)va_arg(args, unsigned int), false, tmp, sizeof(tmp));
                 }
-                // tmp contains uppercase hex by implementation; if lower requested, convert
                 if (!upper) {
                     for (size_t i = 0; i < k_strlen(tmp); i++) {
                         char c = tmp[i];
@@ -163,41 +131,7 @@ static int vsnprintf_local(char *out, size_t out_sz, const char *fmt, va_list ar
     return (int)(out_sz ? (out_sz - 1 - rem) : 0);
 }
 
-int printk_with_level(int level, const char *format, va_list args)
+int vsprintf(char *out, const char *fmt, va_list args)
 {
-    // Format into kernel buffer
-    static char kbuf[2048];
-    int len = vsprintf(kbuf, format, args);
-
-    // Prepend tag by moving buffer content if needed
-    const char *tag = level_tag(level);
-    char finalbuf[2300];
-    k_strcpy(finalbuf, tag);
-    k_strcat(finalbuf, kbuf);
-
-    size_t flen = k_strlen(finalbuf);
-
-    tty_write(0, finalbuf, flen);
-    return (int)flen;
-}
-
-int printk(const char *format, ...)
-{
-    if (!format) return 0;
-
-    int level = 6; // default INFO
-    const char *p = format;
-    if (*p == '<') {
-        p++;
-        int v = 0;
-        bool got = false;
-        while (*p >= '0' && *p <= '9') { got = true; v = v * 10 + (*p - '0'); p++; }
-        if (got && *p == '>') { level = v; p++; format = p; }
-    }
-
-    va_list args;
-    va_start(args, format);
-    int res = printk_with_level(level, format, args);
-    va_end(args);
-    return res;
+    return vsnprintf_local(out, 32768, fmt, args);
 }

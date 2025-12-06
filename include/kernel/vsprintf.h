@@ -17,14 +17,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SERIAL_H
-#define SERIAL_H
+#ifndef VSPRINTF_H
+#define VSPRINTF_H
 
-#include <stdint.h>
-#include <stddef.h>
-#include <stdbool.h>
+#include <stdarg.h>
 
-void srl_init(void);
-void srl_write(const char *buf, size_t len);
+int vsprintf(char *out, const char *fmt, va_list args);
 
 #endif

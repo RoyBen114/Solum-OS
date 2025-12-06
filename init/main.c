@@ -21,19 +21,11 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <boot/info.h>
-#include <kernel/serial.h>
-#include <kernel/screen.h>
+#include <kernel/printk.h>
 
 void main() 
 {
     parse_mb_info();
-    serial_init();
-    vga_init();
 
-    serial_printk("Welcome to Solum OS!\n");
-    vga_printk("Welcome to Solum OS!\n");
-    serial_printk("Version (a0.01)\n");
-    vga_printk("Version (a0.01)\n");
-    serial_printk("By Roy - 2025\n");
-    vga_printk("By Roy - 2025\n");
+    printk("Hello!");
 }
