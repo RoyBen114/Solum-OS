@@ -1,39 +1,40 @@
 /*
  * Copyright (C) 2025 Roy Roy123ty@hotmail.com
- * 
+ *
  * This file is part of Solum OS
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdint.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <boot/info.h>
-#include <kernel/serial.h>
-#include <kernel/screen.h>
+#include <kernel/port.h>
 
-void kernel_main() 
+void outb(uint16_t port, uint8_t value)
 {
-    parse_mb_info();
-    serial_init();
-    vga_init();
+    asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
+}
 
-    serial_printk("Welcome to Solum OS!\n");
-    vga_printk("Welcome to Solum OS!\n");
-    serial_printk("Version (a0.01)\n");
-    vga_printk("Version (a0.01)\n");
-    serial_printk("By Roy - 2025\n");
-    vga_printk("By Roy - 2025\n");
+uint8_t inb(uint16_t port)
+{
+    uint8_t ret;
+    asm volatile("inb %1, %0" : "=a" (ret) : "dN" (port));
+    return ret;
+}
+
+uint16_t inw(uint16_t port)
+{
+    uint16_t ret;
+    asm volatile ("inw %1, %0" : "=a" (ret) : "dN" (port));
+    return ret;
 }

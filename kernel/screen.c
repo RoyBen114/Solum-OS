@@ -21,9 +21,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <lib/screen.h>
+#include <kernel/screen.h>
 #include <lib/string.h>
-#include <lib/port.h>
+#include <kernel/port.h>
 
 #define SCREEN_WIDTH 80
 #define SCREEN_HEIGHT 25
